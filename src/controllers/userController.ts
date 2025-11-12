@@ -1,0 +1,87 @@
+import type { loginDto, registerDto } from "../dtos/userRequest.js";
+import { users } from "../models/userModel.js";
+import { globalResponse } from "../response/globalResponse.js";
+import bcrypt from "bcrypt";
+import { catchAsync } from "../utils/catchAsync.js";
+import { generateToken } from "../middlewares/authMiddleware.js";
+
+export const registerUser = catchAsync(async (req: any, res: any) => {
+  const { firstName, lastName, email, password }: registerDto = req.body;
+
+  if (!firstName || !lastName || !email || !password) {
+    return res
+      .status(400)
+      .json(globalResponse(null, "All fields are required", 400));
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+
+  if (!emailRegex || !passwordRegex) {
+    return res
+      .status(400)
+      .json(
+        globalResponse(null, "Please use the correct email or password", 400)
+      );
+  }
+
+  const existingUser = await users.findOne({ email });
+  if (existingUser) {
+    return res
+      .status(400)
+      .json(globalResponse(null, "User already exist", 400));
+  }
+
+  //HIDE PASSWORD
+  const hashPassword = await bcrypt.hash(password, 10);
+
+  //CREATE PARAMETERS IN THE DATABASE
+  const newUser = await users.create({
+    firstName,
+    lastName,
+    email,
+    password: hashPassword,
+  });
+
+  return res
+    .status(200)
+    .json(globalResponse(newUser, "User created successfully", 200));
+});
+
+export const loginUser = async (req: any, res: any) => {
+  const { email, password }: loginDto = req.body;
+
+  if (!email || !password) {
+    return res
+      .status(400)
+      .json(globalResponse(null, "All field are required", 400));
+  }
+
+  const user = await users.findOne({ email });
+  if (!user) {
+    return res
+      .status(400)
+      .json(globalResponse(null, "Invalid email address", 400));
+  }
+
+  const validPassword = await bcrypt.compare(password, user.password);
+  if (!validPassword) {
+    return res.status(400).json(globalResponse(null, "Invalid password", 400));
+  }
+
+  const token = generateToken(user._id as string);
+
+  return res.status(200).json(
+    globalResponse(
+      {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        token,
+      },
+      "login was successful",
+      200
+    )
+  );
+};
