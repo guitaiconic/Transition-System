@@ -5,6 +5,13 @@ import bcrypt from "bcrypt";
 import { catchAsync } from "../utils/catchAsync.js";
 import { generateToken } from "../middlewares/authMiddleware.js";
 
+const buildAuthCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+  maxAge: 2 * 24 * 60 * 60 * 1000,
+});
+
 export const registerUser = catchAsync(async (req: any, res: any) => {
   const { firstName, lastName, email, password }: registerDto = req.body;
 
@@ -71,6 +78,13 @@ export const loginUser = async (req: any, res: any) => {
 
   const token = generateToken(user._id as string);
 
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    maxAge: 2 * 24 * 60 * 60 * 1000,
+  });
+
   return res.status(200).json(
     globalResponse(
       {
@@ -78,10 +92,65 @@ export const loginUser = async (req: any, res: any) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        token,
       },
       "login was successful",
       200
     )
   );
 };
+
+export const logoutUser = catchAsync(async (_req: any, res: any) => {
+  res.cookie("token", "", {
+    ...buildAuthCookieOptions(),
+    expires: new Date(0),
+    maxAge: undefined,
+  });
+
+  return res
+    .status(200)
+    .json(globalResponse(null, "Logout successful", 200));
+});
+
+export const getProfile = catchAsync(async (req: any, res: any) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json(globalResponse(null, "Unauthorized", 401));
+  }
+
+  const user = await users.findById(userId).select("-password");
+
+  if (!user) {
+    return res.status(404).json(globalResponse(null, "User not found", 404));
+  }
+
+  return res
+    .status(200)
+    .json(globalResponse(user, "Profile fetched successfully", 200));
+});
+
+export const getAllUsers = catchAsync(async (req: any, res: any) => {
+  const allUsers = await users.find().select("-password");
+  if (!allUsers) {
+    return res.status(404).json(globalResponse(null, "Hey bro, you dont have any users", 404));
+  }
+  return res
+    .status(200)
+    .json(globalResponse(allUsers, "Users fetched successfully", 200));
+});
+
+export const AssignRole = catchAsync(async (req: any, res: any) => {
+  const { id } = req.params;
+  const { role } = req.body;
+
+  if (!id) return res.status(400).json(globalResponse(null, "User ID is required", 400));
+  if (!role) return res.status(400).json(globalResponse(null, "Role is required", 400));
+
+  const user = await users.findById(id);
+  if (!user) return res.status(404).json(globalResponse(null, "User not found", 404));
+
+  user.role = role;
+  await user.save();
+
+  return res.status(200).json(globalResponse(user, "Role assigned successfully", 200));
+})

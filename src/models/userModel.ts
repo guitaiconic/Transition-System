@@ -5,6 +5,7 @@ export interface Iuser extends Document {
   lastName: string;
   email: string;
   password: string;
+  role: string;
 }
 
 export const userSchema: Schema = new Schema<Iuser>(
@@ -29,6 +30,12 @@ export const userSchema: Schema = new Schema<Iuser>(
       type: String,
       required: true,
       unique: true,
+    },
+
+    role: {
+      type: String,
+      required: true,
+      default: "user",
     },
   },
   {
