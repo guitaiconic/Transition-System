@@ -13,9 +13,9 @@ const buildAuthCookieOptions = () => ({
 });
 
 export const registerUser = catchAsync(async (req: any, res: any) => {
-  const { firstName, lastName, email, password }: registerDto = req.body;
+  const { firstName, lastName, email, password, role }: registerDto = req.body;
 
-  if (!firstName || !lastName || !email || !password) {
+  if (!firstName || !lastName || !email || !password || !role) {
     return res
       .status(400)
       .json(globalResponse(null, "All fields are required", 400));
@@ -48,7 +48,10 @@ export const registerUser = catchAsync(async (req: any, res: any) => {
     lastName,
     email,
     password: hashPassword,
+    role,
   });
+
+  console.log(newUser);
 
   return res
     .status(200)
@@ -92,6 +95,7 @@ export const loginUser = async (req: any, res: any) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        token,
       },
       "login was successful",
       200
@@ -99,20 +103,8 @@ export const loginUser = async (req: any, res: any) => {
   );
 };
 
-export const logoutUser = catchAsync(async (_req: any, res: any) => {
-  res.cookie("token", "", {
-    ...buildAuthCookieOptions(),
-    expires: new Date(0),
-    maxAge: undefined,
-  });
-
-  return res
-    .status(200)
-    .json(globalResponse(null, "Logout successful", 200));
-});
-
 export const getProfile = catchAsync(async (req: any, res: any) => {
-  const userId = req.user?.id;
+  const userId = req.user?._id;
 
   if (!userId) {
     return res.status(401).json(globalResponse(null, "Unauthorized", 401));
@@ -132,25 +124,102 @@ export const getProfile = catchAsync(async (req: any, res: any) => {
 export const getAllUsers = catchAsync(async (req: any, res: any) => {
   const allUsers = await users.find().select("-password");
   if (!allUsers) {
-    return res.status(404).json(globalResponse(null, "Hey bro, you dont have any users", 404));
+    return res
+      .status(404)
+      .json(globalResponse(null, "Hey bro, you dont have any users", 404));
   }
   return res
     .status(200)
     .json(globalResponse(allUsers, "Users fetched successfully", 200));
 });
 
-export const AssignRole = catchAsync(async (req: any, res: any) => {
-  const { id } = req.params;
+export const assignRole = async (req: any, res: any) => {
+  const { id: userId } = req.params;
   const { role } = req.body;
 
-  if (!id) return res.status(400).json(globalResponse(null, "User ID is required", 400));
-  if (!role) return res.status(400).json(globalResponse(null, "Role is required", 400));
+  console.log("Target User ID from URL:", userId); // Should be target user
+  console.log("Role to assign:", role);
+  console.log("Logged-in Admin:", req.user._id);
 
-  const user = await users.findById(id);
-  if (!user) return res.status(404).json(globalResponse(null, "User not found", 404));
+  if (!userId) {
+    return res
+      .status(400)
+      .json(globalResponse(null, "User ID is required", 400));
+  }
+
+  if (!role) {
+    return res.status(400).json(globalResponse(false, "Role is required", 400));
+  }
+
+  const allowedRole = ["client", "translator"];
+
+  if (!allowedRole.includes(role)) {
+    return res
+      .status(400)
+      .json(
+        globalResponse(
+          null,
+          `Allowed roles are: ${allowedRole.join(", ")}`,
+          400
+        )
+      );
+  }
+
+  const user = await users.findById(userId);
+
+  if (!user) {
+    return res.status(404).json(globalResponse(null, "User not found", 404));
+  }
+
+  if (req.user?._id.toString() === userId && role !== "admin") {
+    return res
+      .status(403)
+      .json(globalResponse(null, "You cannot change your own admin role", 403));
+  }
 
   user.role = role;
   await user.save();
 
-  return res.status(200).json(globalResponse(user, "Role assigned successfully", 200));
-})
+  return res.status(200).json(
+    globalResponse(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      "Role assigned successfully",
+      200
+    )
+  );
+};
+
+// export const logoutUser = catchAsync(async (_req: any, res: any) => {
+//   res.cookie("token", "", {
+//     ...buildAuthCookieOptions(),
+//     expires: new Date(0),
+//     maxAge: undefined,
+//   });
+
+//   return res.status(200).json(globalResponse(null, "Logout successful", 200));
+// });
+
+// //export const AssignRole = catchAsync(async (req: any, res: any) => {
+// const { id } = req.params;
+// const { role } = req.body;
+
+// if (!id)
+//   return res.status(400).json(globalResponse(null, "User ID is required", 400));
+// if (!role)
+//   return res.status(400).json(globalResponse(null, "Role is required", 400));
+
+// const user = await users.findById(id);
+// if (!user)
+//   return res.status(404).json(globalResponse(null, "User not found", 404));
+
+// user.role = role;
+// await user.save();
+
+// return res
+//   .status(200)
+//   .json(globalResponse(user, "Role assigned successfully", 200));
+//});

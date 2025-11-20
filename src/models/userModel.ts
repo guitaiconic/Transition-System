@@ -34,6 +34,9 @@ export const userSchema: Schema = new Schema<Iuser>(
 
     role: {
       type: String,
+      enum: {
+        values: ["user", "client", "admin", "translator"],
+      },
       required: true,
       default: "user",
     },
