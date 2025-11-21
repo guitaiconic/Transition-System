@@ -19,7 +19,7 @@ router.get("/allUsers", verifyToken, checkRole("users"), getAllUsers);
 router.patch("/assign-role/:id", verifyToken, checkRole("admin"), assignRole);
 
 //TASKS ROUTES
-// router.post("/create-task", verifyToken, CheckRole("client"), CreateTask);
+router.post("/create-task", verifyToken, CheckRole("client"), CreateTask);
 // router.post("/assign-task/:id", verifyToken, CheckRole("admin"), AssignTask);
 // router.get("/get-tasks", verifyToken, CheckRole("admin"), GetAllTasks);
 // router.get("/get-task/:id", verifyToken, GetTask);
