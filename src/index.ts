@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
 import userRoute from "./route/userRoutes.js";
+import taskRoute from "./route/taskRoute.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -29,6 +30,7 @@ mongoose
 
 //USER ROUTE
 app.use("/api/users", userRoute);
+app.use("/api/tasks", taskRoute);
 
 app.get("/", healthstatus);
 

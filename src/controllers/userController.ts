@@ -1,4 +1,4 @@
-import type { loginDto, registerDto } from "../dtos/userRequest.js";
+import type { RegisterDto } from "../dtos/userDto.js";
 import { users } from "../models/userModel.js";
 import { globalResponse } from "../response/globalResponse.js";
 import bcrypt from "bcrypt";
@@ -13,24 +13,7 @@ const buildAuthCookieOptions = () => ({
 });
 
 export const registerUser = catchAsync(async (req: any, res: any) => {
-  const { firstName, lastName, email, password, role }: registerDto = req.body;
-
-  if (!firstName || !lastName || !email || !password || !role) {
-    return res
-      .status(400)
-      .json(globalResponse(null, "All fields are required", 400));
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
-
-  if (!emailRegex || !passwordRegex) {
-    return res
-      .status(400)
-      .json(
-        globalResponse(null, "Please use the correct email or password", 400)
-      );
-  }
+  const { firstName, lastName, email, password, role }: RegisterDto = req.body;
 
   const existingUser = await users.findOne({ email });
   if (existingUser) {
@@ -51,57 +34,55 @@ export const registerUser = catchAsync(async (req: any, res: any) => {
     role,
   });
 
-  console.log(newUser);
-
   return res
     .status(200)
     .json(globalResponse(newUser, "User created successfully", 200));
 });
 
-export const loginUser = async (req: any, res: any) => {
-  const { email, password }: loginDto = req.body;
+// export const loginUser = async (req: any, res: any) => {
+//const { email, password }: loginDto = req.body;
 
-  if (!email || !password) {
-    return res
-      .status(400)
-      .json(globalResponse(null, "All field are required", 400));
-  }
+//   if (!email || !password) {
+//     return res
+//       .status(400)
+//       .json(globalResponse(null, "All field are required", 400));
+//   }
 
-  const user = await users.findOne({ email });
-  if (!user) {
-    return res
-      .status(400)
-      .json(globalResponse(null, "Invalid email address", 400));
-  }
+//   const user = await users.findOne({ email });
+//   if (!user) {
+//     return res
+//       .status(400)
+//       .json(globalResponse(null, "Invalid email address", 400));
+//   }
 
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) {
-    return res.status(400).json(globalResponse(null, "Invalid password", 400));
-  }
+//   const validPassword = await bcrypt.compare(password, user.password);
+//   if (!validPassword) {
+//     return res.status(400).json(globalResponse(null, "Invalid password", 400));
+//   }
 
-  const token = generateToken(user._id as string);
+//   const token = generateToken(user._id as string);
 
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-    maxAge: 2 * 24 * 60 * 60 * 1000,
-  });
+//   res.cookie("token", token, {
+//     httpOnly: true,
+//     secure: process.env.NODE_ENV === "production",
+//     sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+//     maxAge: 2 * 24 * 60 * 60 * 1000,
+//   });
 
-  return res.status(200).json(
-    globalResponse(
-      {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        token,
-      },
-      "login was successful",
-      200
-    )
-  );
-};
+//   return res.status(200).json(
+//     globalResponse(
+//       {
+//         id: user._id,
+//         firstName: user.firstName,
+//         lastName: user.lastName,
+//         email: user.email,
+//         token,
+//       },
+//       "login was successful",
+//       200
+//     )
+//   );
+// };
 
 export const getProfile = catchAsync(async (req: any, res: any) => {
   const userId = req.user?._id;

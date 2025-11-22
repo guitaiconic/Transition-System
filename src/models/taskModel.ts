@@ -7,7 +7,7 @@ export interface Itask extends Document {
   translationId: Types.ObjectId | string;
   status: "pending" | "In-progress" | "Completed";
   text: string;
-  translation?: string;
+  translator?: string;
 }
 export const taskSchema: Schema = new Schema(
   {
@@ -32,10 +32,10 @@ export const taskSchema: Schema = new Schema(
       required: true,
     },
     text: {
-      types: String,
+      type: String,
       required: true,
     },
-    translation: {
+    translator: {
       type: String,
     },
   },

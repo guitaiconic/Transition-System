@@ -1,30 +1,27 @@
 import express from "express";
 import {
   registerUser,
-  loginUser,
+  //loginUser,
   getProfile,
   getAllUsers,
   assignRole,
 } from "../controllers/userController.js";
-import { checkRole, verifyToken } from "../middlewares/authMiddleware.js";
+import {
+  checkRole,
+  verifyToken,
+  validateDto,
+} from "../middlewares/authMiddleware.js";
+import { RegisterDto } from "../dtos/userDto.js";
 
 const router = express.Router();
 
 //REGISTER USER ROUTE
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+router.post("/register", validateDto(RegisterDto), registerUser);
+//router.post("/login", loginUser);
 //router.post("/logout", logoutUser);
 router.get("/profile", verifyToken, getProfile);
 router.get("/allUsers", verifyToken, checkRole("users"), getAllUsers);
 router.patch("/assign-role/:id", verifyToken, checkRole("admin"), assignRole);
-
-//TASKS ROUTES
-router.post("/create-task", verifyToken, CheckRole("client"), CreateTask);
-// router.post("/assign-task/:id", verifyToken, CheckRole("admin"), AssignTask);
-// router.get("/get-tasks", verifyToken, CheckRole("admin"), GetAllTasks);
-// router.get("/get-task/:id", verifyToken, GetTask);
-// router.patch("/update-task/:id", verifyToken, UpdateTask);
-// router.delete("/delete-task/:id", verifyToken, CheckRole("admin"), DeleteTask);
 
 //PRICING ROUTES
 // router.post("/set-pricing", verifyToken, CheckRole("admin"), SetPricing);
