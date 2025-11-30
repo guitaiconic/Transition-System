@@ -139,7 +139,16 @@ router.get(
   })
 );
 
-// router.get("/allUsers", verifyToken, checkRole("admin"), getAllUsers);
+//UPDATE ALL USERS
+router.put(
+  "/updateAllUsers",
+  verifyToken,
+  checkRole("admin"),
+  (req: any, res: any) => {
+    const users = req.body;
+  }
+);
+
 // router.patch("/assign-role/:id", verifyToken, checkRole("admin"), assignRole);
 
 export default router;
