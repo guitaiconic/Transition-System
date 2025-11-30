@@ -3,20 +3,15 @@ import { users } from "./userModel.js";
 
 export interface Itask extends Document {
   clientId: Types.ObjectId | string;
-  assignTo: Types.ObjectId | string;
   translationId: Types.ObjectId | string;
   status: "pending" | "In-progress" | "Completed";
   text: string;
   translator?: string;
+  amount: number;
 }
 export const taskSchema: Schema = new Schema(
   {
     clientId: {
-      type: Schema.Types.ObjectId,
-      ref: users,
-      required: true,
-    },
-    assignTo: {
       type: Schema.Types.ObjectId,
       ref: users,
       required: true,
@@ -37,6 +32,12 @@ export const taskSchema: Schema = new Schema(
     },
     translator: {
       type: String,
+      default: null,
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
     },
   },
   {
