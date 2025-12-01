@@ -199,6 +199,10 @@ router.patch(
 
     user.role = role;
     await user.save();
+
+    return res
+      .status(200)
+      .json(globalResponse(user, "Role has been assign successfuly", 200));
   }
 );
 
