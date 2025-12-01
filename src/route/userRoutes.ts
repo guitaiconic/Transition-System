@@ -139,16 +139,67 @@ router.get(
   })
 );
 
-//UPDATE ALL USERS
-router.put(
-  "/updateAllUsers",
+//UPDATE USER BY ASSIGNING ROLE
+router.patch(
+  "/assignUserRole/:id",
   verifyToken,
   checkRole("admin"),
-  (req: any, res: any) => {
-    const users = req.body;
+  async (req: any, res: any) => {
+    const { userId } = req.params;
+    const { role } = req.body;
+    const { adminId } = req.user._id;
+
+    if (!userId) {
+      return res
+        .status(404)
+        .json(globalResponse(null, "User ID is required", 404));
+    }
+
+    if (!role) {
+      return res
+        .status(404)
+        .json(globalResponse(null, "Role ID is required", 404));
+    }
+
+    //CHECK IF THE PROVIDED ROLE IS AMONG THE LIST OF ROLES
+
+    const allowedRole = ["client", "translator"];
+
+    if (!allowedRole.includes(role)) {
+      return res
+        .status(400)
+        .json(
+          globalResponse(
+            null,
+            `Invalid role. Allowed roles are: ${allowedRole.join(", ")}`,
+            400
+          )
+        );
+    }
+
+    //SEARCH DATABASE FOR USER WITH THAT USERID
+    const user = await users.findById(userId);
+
+    if (!user) {
+      return res.status(404).json(globalResponse(null, "User not found", 404));
+    }
+
+    //IF ADMIN IS TRYING TO REMOVE THEIR OWN ADMIN ROLE
+    if (userId === adminId && role !== "admin") {
+      return res
+        .status(403)
+        .json(
+          globalResponse(
+            null,
+            "You cannot remove your own admin privilegdes",
+            403
+          )
+        );
+    }
+
+    user.role = role;
+    await user.save();
   }
 );
-
-// router.patch("/assign-role/:id", verifyToken, checkRole("admin"), assignRole);
 
 export default router;
