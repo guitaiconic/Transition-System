@@ -104,7 +104,7 @@ router.get(
   "/profile/:id",
   verifyToken,
   catchAsync(async (req: any, res: any) => {
-    const userId = req.users._id;
+    const userId = req.users.id;
 
     //IF USER DOESN'T EXIST
     if (!userId) {
@@ -127,7 +127,7 @@ router.get(
     return res.status(201).json(
       globalResponse(
         {
-          id: user._id,
+          id: user.id,
           fullName: user.fullName,
           email: user.email,
           role: user.role,
@@ -145,9 +145,9 @@ router.patch(
   verifyToken,
   checkRole("admin"),
   async (req: any, res: any) => {
-    const { userId } = req.params;
+    const { userId } = req.params.id;
     const { role } = req.body;
-    const { adminId } = req.user._id;
+    const { adminId } = req.user.id;
 
     if (!userId) {
       return res
@@ -204,6 +204,69 @@ router.patch(
       .status(200)
       .json(globalResponse(user, "Role has been assign successfuly", 200));
   }
+);
+
+//DELETE USER
+router.delete(
+  "/:id",
+  verifyToken,
+  catchAsync(async (req: any, res: any) => {
+    const user = await users.findById(req.params.id);
+
+    if (user) {
+      //USERS CAN DELETE THEIR OWN ACCOUNT WHILE ADMIN CAN DELETE ANYONES ACCOUNT
+      const userOwnAccount = req.params.id === req.user.id;
+      const adminAccount = req.user.role === "admin";
+
+      if (!userOwnAccount && !adminAccount) {
+        return res
+          .status(404)
+          .json(
+            globalResponse(
+              null,
+              "You do not have access to delete this user",
+              404
+            )
+          );
+      }
+
+      //PREVENTING ADMIN FROM DELETING OTHER ADMIN ACCOUNT
+      if (user.role === "admin") {
+        return res
+          .status(403)
+          .json(
+            globalResponse(
+              null,
+              "Admins cannot delete other admin account",
+              403
+            )
+          );
+      }
+
+      //DELETE USER
+      const userToDelete = await users.findByIdAndDelete(req.params.id);
+      // console.log(userToDelete);
+
+      return res
+        .status(200)
+        .json(globalResponse(userToDelete, "User deleted successfulyy", 200));
+    } else {
+      return res.status(404).json(globalResponse(null, "User not found", 404));
+    }
+  })
+);
+
+//GET ALL USER
+router.get(
+  "/allUsers",
+  //checkRole("admin"),
+  catchAsync(async (req: any, res: any) => {
+    const allUsers = await users.find().select("-password");
+
+    return res
+      .status(200)
+      .json(globalResponse(allUsers, "User retrieved successfully", 200));
+  })
 );
 
 export default router;
