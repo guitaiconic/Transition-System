@@ -5,7 +5,7 @@ export interface createTaskDto {
   text: string;
 }
 
-export interface createTaskDto {
+export interface assignRole {
   translatorId: Types.ObjectId;
   amount: number;
 }
