@@ -197,12 +197,13 @@ router.patch(
         );
     }
 
-    user.role = role;
-    await user.save();
+    const assignRole = await user.updateOne({ role });
 
     return res
       .status(200)
-      .json(globalResponse(user, "Role has been assign successfuly", 200));
+      .json(
+        globalResponse(assignRole, "Role has been assign successfuly", 200)
+      );
   }
 );
 

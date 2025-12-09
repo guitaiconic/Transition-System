@@ -115,10 +115,14 @@ router.patch(
     }
 
     //Assign task
-    const assignTask = await tasks.findByIdAndUpdate(taskId, {
-      translatorId,
-      amount,
-    });
+    const assignTask = await tasks.findByIdAndUpdate(
+      taskId,
+      {
+        translatorId,
+        amount,
+      },
+      { new: true }
+    );
 
     return res
       .status(200)
@@ -194,7 +198,7 @@ router.delete(
 
 //UPDATE TASK
 router.patch(
-  "/update-task/:id",
+  "/updateTask/:id",
   verifyToken,
   catchAsync(async (req: any, res: Response) => {
     const { id: taskId } = req.params;
@@ -212,12 +216,25 @@ router.patch(
     const isAdmin = userRole === "admin";
     const isOwnAccount = task.clientId.toString() === userId.toString();
 
-    if (!isAdmin || !isOwnAccount) {
+    if (!isAdmin && !isOwnAccount) {
       return res.status(400).json(globalResponse(null, "Not authorized", 400));
     }
 
     //Update task
-    const updateTask = await tasks.findOneAndUpdate();
+    const updateTask = await tasks.findByIdAndUpdate(
+      taskId,
+      {
+        text,
+        status,
+        translation,
+        amount,
+      },
+      { new: true }
+    );
+
+    return res
+      .status(200)
+      .json(globalResponse(updateTask, "task updated successfully", 200));
   })
 );
 
