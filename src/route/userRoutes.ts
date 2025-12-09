@@ -245,7 +245,6 @@ router.delete(
 
       //DELETE USER
       const userToDelete = await users.findByIdAndDelete(req.params.id);
-      // console.log(userToDelete);
 
       return res
         .status(200)

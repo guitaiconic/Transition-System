@@ -141,7 +141,53 @@ router.get(
   })
 );
 
-// router.patch("/update-task/:id", verifyToken, UpdateTask);
-// router.delete("/delete-task/:id", verifyToken, CheckRole("admin"), DeleteTask);
+//DELETE TASK BY ID
+router.delete(
+  "/delete-task/:id",
+  verifyToken,
+  checkRole("admin"),
+  catchAsync(async (req: any, res: Response) => {
+    const { id: taskId } = req.params;
+    const userId = req.user._id;
+    const userRole = req.user.role;
+
+    //Check Task by ID
+    const task = await taskId.findById(taskId);
+    if (!task) {
+      return res.status(404).json(globalResponse(null, "Task not found", 404));
+    }
+
+    //Check user and admin permission
+    const isAdmin = userRole === "admin";
+    const isOwnAccount = task.clientId === userId;
+    const translator = task.translator;
+
+    if (!isAdmin || !isOwnAccount) {
+      return res
+        .status(403)
+        .json(
+          globalResponse(
+            null,
+            "You do not have permission to delete this task",
+            403
+          )
+        );
+    }
+
+    if (!translator) {
+      return res
+        .status(400)
+        .json(globalResponse(null, "cannot delete assign task", 400));
+    }
+
+    const deleteTask = await tasks.findByIdAndDelete(taskId);
+
+    return res
+      .status(200)
+      .json(globalResponse(deleteTask, "Task deleted successfully", 200));
+  })
+);
+
+//router.patch("/update-task/:id", verifyToken, UpdateTask);
 
 export default router;
