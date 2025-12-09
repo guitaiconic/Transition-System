@@ -1,7 +1,11 @@
 import express from "express";
 import mongoose from "mongoose";
 import { verifyToken, checkRole } from "../middlewares/authMiddleware.js";
-import type { assignRole, createTaskDto } from "../dtos/taskDto.js";
+import type {
+  assignRole,
+  createTaskDto,
+  updateTaskDto,
+} from "../dtos/taskDto.js";
 import { globalResponse } from "../response/globalResponse.js";
 import type { Response } from "express";
 import { tasks } from "../models/taskModel.js";
@@ -159,7 +163,7 @@ router.delete(
 
     //Check user and admin permission
     const isAdmin = userRole === "admin";
-    const isOwnAccount = task.clientId === userId;
+    const isOwnAccount = (task.clientId as string) === (userId as string);
     const translator = task.translator;
 
     if (!isAdmin || !isOwnAccount) {
@@ -188,6 +192,33 @@ router.delete(
   })
 );
 
-//router.patch("/update-task/:id", verifyToken, UpdateTask);
+//UPDATE TASK
+router.patch(
+  "/update-task/:id",
+  verifyToken,
+  catchAsync(async (req: any, res: Response) => {
+    const { id: taskId } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    const { text, status, translation, amount }: updateTaskDto = req.body;
+
+    //Get task to update
+    const task = await tasks.findById(taskId);
+    if (!task) {
+      return res.status(404).json(globalResponse(null, "Task not found", 404));
+    }
+
+    //Permission check for user and admin
+    const isAdmin = userRole === "admin";
+    const isOwnAccount = task.clientId.toString() === userId.toString();
+
+    if (!isAdmin || !isOwnAccount) {
+      return res.status(400).json(globalResponse(null, "Not authorized", 400));
+    }
+
+    //Update task
+    const updateTask = await tasks.findOneAndUpdate();
+  })
+);
 
 export default router;

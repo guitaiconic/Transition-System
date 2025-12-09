@@ -158,7 +158,7 @@ router.patch(
     if (!role) {
       return res
         .status(404)
-        .json(globalResponse(null, "Role ID is required", 404));
+        .json(globalResponse(null, "Role is required", 404));
     }
 
     //CHECK IF THE PROVIDED ROLE IS AMONG THE LIST OF ROLES

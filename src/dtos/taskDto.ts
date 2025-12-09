@@ -9,3 +9,10 @@ export interface assignRole {
   translatorId: Types.ObjectId;
   amount: number;
 }
+
+export interface updateTaskDto {
+  status?: "Pending" | "In-progress" | "Completed";
+  text?: string;
+  translation?: string;
+  amount?: number;
+}
